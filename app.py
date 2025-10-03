@@ -67,7 +67,7 @@ def dashboard():
 
     for s in services:
         try:
-        # her gemmer den tasks per service navn
+	# her gemmer den tasks per service navn
             tasks = s.tasks()
             tasks_dict[s.name] = tasks 
 
@@ -197,7 +197,12 @@ def deploy():
 
         try:
             client = docker.from_env()
-            client.services.create(image, name=name, mode={"Replicated": {"Replicas": replicas}})
+            client.services.create(
+                image, 
+                name=name, 
+                mode={"Replicated": {"Replicas": replicas}},
+                task_template={"Placement": {"Constraints": [f"node.labels.site == {site}"]}}
+            )
             deploy_results[task_id] = {"status": "success", "message": f"Service {name} deployed"}
         except Exception as e:
             deploy_results[task_id] = {"status": "error", "message": f"Fejl: {e}"}
