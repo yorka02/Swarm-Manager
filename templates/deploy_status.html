@@ -1,0 +1,37 @@
+{% extends "base.html" %}
+{% block content %}
+<div class="container mt-5">
+  <div class="card shadow-lg border-0">
+    <div class="card-body text-center">
+
+      {% if result.status == "running" %}
+        <h4 class="mb-3"><i class="bi bi-gear-fill text-primary"></i> Deployment i gang...</h4>
+        <div class="progress" style="height: 30px;">
+          <div class="progress-bar progress-bar-striped progress-bar-animated bg-primary" 
+               role="progressbar" style="width: 75%">Arbejder...</div>
+        </div>
+        <p class="mt-3 text-muted">{{ result.message }}</p>
+
+      {% elif result.status == "success" %}
+        <h4 class="text-success"><i class="bi bi-check-circle-fill"></i> Deployment færdig!</h4>
+        <p class="mt-3">{{ result.message }}</p>
+        <a href="{{ url_for('dashboard') }}" class="btn btn-success mt-3">
+          <i class="bi bi-speedometer2"></i> Tilbage til Dashboard
+        </a>
+
+      {% elif result.status == "error" %}
+        <h4 class="text-danger"><i class="bi bi-x-circle-fill"></i> Deployment fejlede</h4>
+        <p class="mt-3">{{ result.message }}</p>
+        <a href="{{ url_for('deploy') }}" class="btn btn-danger mt-3">
+          <i class="bi bi-arrow-repeat"></i> Prøv igen
+        </a>
+
+      {% else %}
+        <h4 class="text-secondary"><i class="bi bi-question-circle"></i> Ukendt status</h4>
+        <p>{{ result.message }}</p>
+      {% endif %}
+
+    </div>
+  </div>
+</div>
+{% endblock %}

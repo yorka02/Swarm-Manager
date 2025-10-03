@@ -1,0 +1,76 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="container py-4">
+  <!-- Logo + titel -->
+  <div class="d-flex align-items-center mb-4">
+    <h2 class="mb-0">Service Dashboard</h2>
+  </div>
+
+  <!-- Søgefelt -->
+  <div class="mb-4">
+    <input id="serviceSearch" type="text" class="form-control" placeholder="Søg service..." onkeyup="filterServices()" />
+  </div>
+
+  <!-- Accordion med service-liste -->
+  <div class="accordion" id="servicesAccordion">
+    {% for service in services %}
+    <div class="accordion-item mb-3 service-item">
+      <h2 class="accordion-header" id="heading{{ loop.index }}">
+        <button class="accordion-button collapsed d-flex justify-content-between" type="button" data-bs-toggle="collapse" data-bs-target="#collapse{{ loop.index }}" aria-expanded="false" aria-controls="collapse{{ loop.index }}">
+          <span class="service-name">{{ service.name }}</span>
+          {% set service_tasks = tasks[service.name] if service.name in tasks else [] %}
+          {% set active = (service_tasks | length > 0 and service_tasks[0]["Status"]["State"] == "running") %}
+          <span class="badge ms-2 {% if active %}bg-success{% else %}bg-danger{% endif %}">
+            {{ "Aktiv" if active else "Stoppet" }}
+          </span>
+        </button>
+      </h2>
+      <div id="collapse{{ loop.index }}" class="accordion-collapse collapse" aria-labelledby="heading{{ loop.index }}" data-bs-parent="#servicesAccordion">
+        <div class="accordion-body">
+          <p><strong>Replicas:</strong> {{ service.replicas }}</p>
+          <p><strong>Oprettet:</strong> {{ service.created }}</p>
+
+          <h6>Tasks:</h6>
+          <ul class="list-group mb-3">
+            {% for task in service_tasks %}
+            <li class="list-group-item small">
+              <strong>ID:</strong> {{ task["ID"][:12] }}<br>
+              <strong>State:</strong> {{ task["Status"]["State"] }}<br>
+              <strong>Opdateret:</strong> {{ task["Status"]["Timestamp"] if "Timestamp" in task["Status"] else "ukendt" }}
+            </li>
+            {% else %}
+            <li class="list-group-item text-muted">Ingen tasks fundet.</li>
+            {% endfor %}
+          </ul>
+
+          <div class="d-flex gap-2">
+            <a href="{{ url_for('service_stop', service_id=service.id) }}" class="btn btn-sm btn-warning">Stop</a>
+            <a href="{{ url_for('service_start', service_id=service.id) }}" class="btn btn-sm btn-success">Start</a>
+            <a href="{{ url_for('service_delete', service_id=service.id) }}" class="btn btn-sm btn-danger">Slet</a>
+          </div>
+        </div>
+      </div>
+    </div>
+    {% endfor %}
+  </div>
+</div>
+
+<script>
+// JavaScript funktion til at filtrere services baseret på søgeord
+function filterServices() {
+  const input = document.getElementById('serviceSearch');
+  const filter = input.value.toLowerCase();
+  const items = document.getElementsByClassName('service-item');
+  for (let i = 0; i < items.length; i++) {
+    const nameEl = items[i].querySelector('.service-name');
+    if (nameEl.textContent.toLowerCase().includes(filter)) {
+      items[i].style.display = '';
+    } else {
+      items[i].style.display = 'none';
+    }
+  }
+}
+</script>
+
+{% endblock %}

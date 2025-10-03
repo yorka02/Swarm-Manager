@@ -1,0 +1,55 @@
+{% extends "base.html" %}
+{% block content %}
+<h3 class="mb-4">🚀 Deploy ny service</h3>
+
+<div class="card shadow-lg border-0">
+  <div class="card-body">
+    <form method="post" class="row g-3">
+      
+      <!-- Service Name -->
+      <div class="col-md-4">
+        <label class="form-label"><i class="bi bi-hdd-stack"></i> Service Name</label>
+        <input class="form-control" name="name" placeholder="fx my-webapp" required>
+      </div>
+
+      <!-- Image Dropdown -->
+      <div class="col-md-5">
+        <label class="form-label"><i class="bi bi-box-seam"></i> Vælg Image</label>
+        <select class="form-select" name="image" id="imageSelect" onchange="toggleCustomImage(this.value)">
+          <option value="nginx:latest">nginx:latest</option>
+          <option value="mysql:8">mysql:8</option>
+          <option value="redis:latest">redis:latest</option>
+          <option value="python:3.11">python:3.11</option>
+          <option value="node:20">node:20</option>
+          <option value="custom">Andet (custom)</option>
+        </select>
+        <input type="text" class="form-control mt-2 d-none" id="customImageInput" placeholder="Indtast dit eget image" name="custom_image">
+      </div>
+
+      <!-- Replicas -->
+      <div class="col-md-3">
+        <label class="form-label"><i class="bi bi-123"></i> Replicas</label>
+        <input class="form-control" name="replicas" type="number" value="1" min="1">
+      </div>
+
+      <!-- Submit -->
+      <div class="col-12 mt-3">
+        <button class="btn btn-success px-4"><i class="bi bi-cloud-upload"></i> Deploy</button>
+      </div>
+    </form>
+  </div>
+</div>
+
+<script>
+function toggleCustomImage(value) {
+  const input = document.getElementById("customImageInput");
+  if (value === "custom") {
+    input.classList.remove("d-none");
+    input.setAttribute("name", "image");
+  } else {
+    input.classList.add("d-none");
+    input.removeAttribute("name");
+  }
+}
+</script>
+{% endblock %}

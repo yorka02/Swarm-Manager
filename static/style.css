@@ -1,0 +1,10 @@
+body {
+  font-family: "Inter", Arial, sans-serif;
+}
+.nav-link {
+  font-size: 1.1em;
+}
+.card {
+  border-radius: 12px;
+}
+
