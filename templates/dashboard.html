@@ -32,6 +32,9 @@
               Stoppet
             {% endif %}
             </span>
+            {% if service.site and service.site != '-' %}
+              <span class="badge bg-secondary ms-2">Site-{{ service.site }}</span>
+            {% endif %}
           </span>
         </button>
       </h2>
