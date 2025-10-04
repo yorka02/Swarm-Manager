@@ -189,6 +189,7 @@ def deploy():
         name = request.form["name"]
         replicas = int(request.form["replicas"])
         image = request.form.get("image")
+        site = request.form.get("site")
 
         if image == "custom":
             image = request.form.get("custom_image")
