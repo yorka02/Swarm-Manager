@@ -102,13 +102,24 @@ def dashboard():
             except Exception:
                 image = None
 
+            # Extract site label from service spec labels or from TaskTemplate ContainerSpec labels
+            site_label = None
+            try:
+                spec_labels = s.attrs.get("Spec", {}).get("Labels", {}) or {}
+                container_labels = s.attrs.get("Spec", {}).get("TaskTemplate", {}).get("ContainerSpec", {}).get("Labels", {}) or {}
+                # prefer service-level label 'site' or 'node.labels.site'
+                site_label = spec_labels.get("site") or spec_labels.get("node.labels.site") or container_labels.get("site") or container_labels.get("node.labels.site")
+            except Exception:
+                site_label = None
+
             service_data.append({
                 "id": s.id,
                 "name": s.name,
                 "status": status,
                 "created": created_time,
                 "replicas": s.attrs["Spec"]["Mode"].get("Replicated", {}).get("Replicas", 0),
-                "image": image or "unknown"
+                "image": image or "unknown",
+                "site": site_label.upper() or "-"
             })
         except Exception:
             pass 
