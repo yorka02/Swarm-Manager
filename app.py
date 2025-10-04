@@ -202,7 +202,9 @@ def deploy():
                 image, 
                 name=name, 
                 mode={"Replicated": {"Replicas": replicas}},
-                task_template={"Placement": {"Constraints": [f"node.labels.site == {site}"]}}
+                #task_template={"Placement": {"Constraints": [f"node.labels.site == {site}"]}},
+                container_labels={"node.labels.site": site},
+                constraints=["node.role == worker"]
             )
             deploy_results[task_id] = {"status": "success", "message": f"Service {name} deployed"}
         except Exception as e:
