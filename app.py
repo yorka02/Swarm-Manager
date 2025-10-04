@@ -95,12 +95,20 @@ def dashboard():
             created = s.attrs.get("CreatedAt", "")
             created_time = created.split(".")[0] if created else "ukendt"
 
+            # Extract image from service spec (TaskTemplate -> ContainerSpec -> Image)
+            image = None
+            try:
+                image = s.attrs.get("Spec", {}).get("TaskTemplate", {}).get("ContainerSpec", {}).get("Image")
+            except Exception:
+                image = None
+
             service_data.append({
                 "id": s.id,
                 "name": s.name,
                 "status": status,
                 "created": created_time,
-                "replicas": s.attrs["Spec"]["Mode"].get("Replicated", {}).get("Replicas", 0)
+                "replicas": s.attrs["Spec"]["Mode"].get("Replicated", {}).get("Replicas", 0),
+                "image": image or "unknown"
             })
         except Exception:
             pass 

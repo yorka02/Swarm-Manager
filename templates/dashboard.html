@@ -38,6 +38,7 @@
       <div id="collapse{{ loop.index }}" class="accordion-collapse collapse" aria-labelledby="heading{{ loop.index }}" data-bs-parent="#servicesAccordion">
         <div class="accordion-body">
           <p><strong>Replicas:</strong> {{ service.replicas }}</p>
+          <p><strong>Image:</strong> <code>{{ service.image }}</code></p>
           <p><strong>Oprettet:</strong> {{ service.created }}</p>
 
           <h6>Tasks:</h6>
