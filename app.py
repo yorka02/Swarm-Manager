@@ -77,9 +77,20 @@ def dashboard():
             tasks = s.tasks()
             tasks_dict[s.name] = tasks 
 
-            status = "running"
-            if not any(t["Status"]["State"] == "running" for t in tasks):
+            if any(t["Status"]["State"] == "running" for t in tasks):
+                status = "running"
+
+            if any(t["Status"]["State"] == "stopped" for t in tasks):
                 status = "stopped"
+
+            if any(t["Status"]["State"] == "preparing" for t in tasks):
+                status = "preparing"
+
+            if any(t["Status"]["State"] == "starting" for t in tasks):
+                status = "starting"
+
+            else:
+                status = "unknown"
 
             created = s.attrs.get("CreatedAt", "")
             created_time = created.split(".")[0] if created else "ukendt"

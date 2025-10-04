@@ -18,11 +18,20 @@
     <div class="accordion-item mb-3 service-item">
       <h2 class="accordion-header" id="heading{{ loop.index }}">
         <button class="accordion-button collapsed d-flex justify-content-between" type="button" data-bs-toggle="collapse" data-bs-target="#collapse{{ loop.index }}" aria-expanded="false" aria-controls="collapse{{ loop.index }}">
-          <span class="service-name">{{ service.name }}</span>
-          {% set service_tasks = tasks[service.name] if service.name in tasks else [] %}
-          {% set active = (service_tasks | length > 0 and service_tasks[0]["Status"]["State"] == "running") %}
-          <span class="badge ms-2 {% if active %}bg-success{% else %}bg-danger{% endif %}">
-            {{ "Aktiv" if active else "Stoppet" }}
+            <span class="service-name">{{ service.name }}</span>
+            {% set service_tasks = tasks[service.name] if service.name in tasks else [] %}
+            {% set active = (service_tasks | length > 0 and service_tasks[0]["Status"]["State"] == "running") %}
+            {% set preparing = (service_tasks | length > 0 and service_tasks[0]["Status"]["State"] == "preparing") %}
+            {% set preparing = (service_tasks | length > 0 and service_tasks[0]["Status"]["State"] == "starting") %}
+            <span class="badge ms-2 {% if active %}bg-success{% elif preparing %}bg-warning{% else %}bg-danger{% endif %}">
+            {% if active %}
+              Aktiv
+            {% elif preparing %}
+              Forbereder
+            {% else %}
+              Stoppet
+            {% endif %}
+            </span>
           </span>
         </button>
       </h2>
