@@ -126,39 +126,41 @@ def service_start(service_id):
 
     return redirect(url_for("dashboard"))
 
-
+# This function does not currently work!
 @app.route("/service/stop/<service_id>")
 @login_required
 def service_stop(service_id):
-    client = docker.DockerClient(base_url='unix://var/run/docker.sock')
-
-    try:
-        service = client.services.get(service_id)
-        spec = service.attrs["Spec"]
-
-        # Sætter antal replicas til 0 for at stoppe servicen
-        mode = spec.get("Mode", {})
-        if "Replicated" in mode:
-            mode["Replicated"]["Replicas"] = 0
-        else:
-            mode = {"Replicated": {"Replicas": 0}}
-
-        # Opdaterer servicen så den stopper
-        service.update(
-            taskTemplate=spec.get("TaskTemplate"),
-            name=spec.get("Name"),
-            labels=spec.get("Labels", {}),
-            mode=mode,
-            networks=spec.get("Networks", []),
-            endpoint_spec=spec.get("EndpointSpec", {})
-        )
-
-        flash("Service stoppet", "info")
-
-    except Exception as e:
-        flash(f"Fejl: {e}", "danger")
-
+    flash("Denne funktion virker desværre ikke endnu.", "warning")
     return redirect(url_for("dashboard"))
+    # client = docker.DockerClient(base_url='unix://var/run/docker.sock')
+
+    # try:
+    #     service = client.services.get(service_id)
+    #     spec = service.attrs["Spec"]
+
+    #     # Sætter antal replicas til 0 for at stoppe servicen
+    #     mode = spec.get("Mode", {})
+    #     if "Replicated" in mode:
+    #         mode["Replicated"]["Replicas"] = 0
+    #     else:
+    #         mode = {"Replicated": {"Replicas": 0}}
+
+    #     # Opdaterer servicen så den stopper
+    #     service.update(
+    #         taskTemplate=spec.get("TaskTemplate"),
+    #         name=spec.get("Name"),
+    #         labels=spec.get("Labels", {}),
+    #         mode=mode,
+    #         networks=spec.get("Networks", []),
+    #         endpoint_spec=spec.get("EndpointSpec", {})
+    #     )
+
+    #     flash("Service stoppet", "info")
+
+    # except Exception as e:
+    #     flash(f"Fejl: {e}", "danger")
+
+    # return redirect(url_for("dashboard"))
 
 
 
