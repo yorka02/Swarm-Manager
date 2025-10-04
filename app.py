@@ -61,13 +61,19 @@ def dashboard():
     client = docker.DockerClient(base_url='unix://var/run/docker.sock')
     services = client.services.list()
     containers = client.containers.list(all=True)
-# Her samler den alle tasks som er lavet per service
+
+
+    # Her samler den alle tasks som er lavet per service
     service_data = []
     tasks_dict = {}  
 
     for s in services:
+        # Filter out containers with name traefik-site-* and swarm-manager_web
+        names = s.name
+        if names.startswith("traefik-site-") or names == "swarm-manager_web":
+            continue
         try:
-	# her gemmer den tasks per service navn
+            # her gemmer den tasks per service navn
             tasks = s.tasks()
             tasks_dict[s.name] = tasks 
 
@@ -88,7 +94,7 @@ def dashboard():
         except Exception:
             pass 
 
-    return render_template("dashboard.html", services=service_data, containers=containers, tasks=tasks_dict)
+    return render_template("dashboard.html", services=service_data, tasks=tasks_dict)
 
 
 # Start service igen
