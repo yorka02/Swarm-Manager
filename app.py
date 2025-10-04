@@ -58,7 +58,7 @@ def logout():
 @app.route("/")
 @login_required
 def dashboard():
-    client = docker.from_env()
+    client = docker.DockerClient(base_url='unix://var/run/docker.sock')
     services = client.services.list()
     containers = client.containers.list(all=True)
 # Her samler den alle tasks som er lavet per service
@@ -96,7 +96,7 @@ def dashboard():
 @app.route("/service/start/<service_id>")
 @login_required
 def service_start(service_id):
-    client = docker.from_env()
+    client = docker.DockerClient(base_url='unix://var/run/docker.sock')
 
     try:
         service = client.services.get(service_id)
@@ -130,7 +130,7 @@ def service_start(service_id):
 @app.route("/service/stop/<service_id>")
 @login_required
 def service_stop(service_id):
-    client = docker.from_env()
+    client = docker.DockerClient(base_url='unix://var/run/docker.sock')
 
     try:
         service = client.services.get(service_id)
@@ -168,7 +168,7 @@ def service_stop(service_id):
 @app.route("/service/delete/<service_id>")
 @login_required
 def service_delete(service_id):
-    client = docker.from_env()
+    client = docker.DockerClient(base_url='unix://var/run/docker.sock')
     try:
         service = client.services.get(service_id)
         service.remove()
@@ -196,7 +196,7 @@ def deploy():
         deploy_results[task_id] = {"status": "running", "message": "Deployment startet..."}
 
         try:
-            client = docker.from_env()
+            client = docker.DockerClient(base_url='unix://var/run/docker.sock')
             client.services.create(
                 image, 
                 name=name, 

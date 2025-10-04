@@ -1,0 +1,42 @@
+version: '3.8'
+
+services:
+  web:
+    image: swarm-manager:latest
+    
+    # We don't need to publish ports here, Traefik will handle routing
+    #ports:
+    # - "5000:5000"
+
+    volumes:
+      # mount host docker socket so the container can control the daemon. Must run on manager node.
+      - /var/run/docker.sock:/var/run/docker.sock
+    
+    # Connect to traefik overlay network
+    networks:
+      - traefik
+
+    # Ensure the service runs on a manager node
+    deploy:
+      mode: replicated
+      replicas: 1
+      placement:
+        constraints:
+          - node.role == manager
+      
+      # Traefik labels for routing
+      labels:
+        - "traefik.enable=true"
+        - "traefik.http.routers.swarm-manager.rule=Host(`swarm-manager.dknet.local`)"
+        - "traefik.http.routers.swarm-manager.entrypoints=websecure"
+        - "traefik.http.routers.swarm-manager.tls=true"
+        - "traefik.http.services.swarm-manager.loadbalancer.server.port=5000"
+
+      restart_policy:
+        condition: on-failure
+
+# Connect to existing traefik network
+networks:
+  traefik:
+    name: traefik
+    external: true
