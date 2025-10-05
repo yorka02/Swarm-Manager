@@ -126,7 +126,8 @@ class SwarmManager:
         return (service_name, service_image, service_id, service_replicas, service_labels, service_created_at, service_updated_at)
 
     def start_service(self, service_id):
-        service = self.get_service(service_id)
+        # get the actual Docker service object (get_service returns a tuple of fields)
+        service = self.client.services.get(service_id)
         spec = service.attrs["Spec"]
         mode = spec.get("Mode", {})
         if "Replicated" in mode:
@@ -143,7 +144,8 @@ class SwarmManager:
         )
 
     def stop_service(self, service_id):
-        service = self.get_service(service_id)
+        # get the actual Docker service object (get_service returns a tuple of fields)
+        service = self.client.services.get(service_id)
         spec = service.attrs["Spec"]
         mode = spec.get("Mode", {})
         if "Replicated" in mode:
@@ -160,7 +162,8 @@ class SwarmManager:
         )
 
     def delete_service(self, service_id):
-        service = self.get_service(service_id)
+        # get the actual Docker service object (get_service returns a tuple of fields)
+        service = self.client.services.get(service_id)
         service.remove()
 
     def deploy_service(self, name, image, replicas, site):
@@ -185,8 +188,10 @@ def dashboard():
     services = swarm_manager.list_services()
     containers = swarm_manager.list_containers()
     task_dict = {}
+    service_data = []
 
     for s in services:
+        # Get detailed service info
         service_name, service_image, service_id, service_replicas, service_labels, service_created_at, service_updated_at = swarm_manager.get_service(s.id)
 
         # Hide traefik and swarm-manager services from dashboard
@@ -194,35 +199,24 @@ def dashboard():
             continue
         
         tasks = s.tasks()
-        if any(t["Status"]["State"] == "running" for t in tasks):
+        # record tasks per-service so templates can reference them
+        task_dict[s.name] = tasks
+        if any(t.get("Status", {}).get("State") == "running" for t in tasks):
             status = "running"
         else:
             status = "stopped"
-        task_dict[s.name] = tasks
 
-        # Get tasks/containers for the service
-        # for container in s.tasks():
-        #     container_id, container_name, container_status, container_health, container_image, container_created_at = swarm_manager.get_container(container.get('Status', {}).get('ContainerStatus', {}).get('ContainerID', ''))
-
-        #     s.container_data = {
-        #         "id": container_id,
-        #         "name": container_name,
-        #         "status": container_status,
-        #         "health": container_health,
-        #         "image": container_image,
-        #         "created": container_created_at
-        #     }
-
-        #  Format service data
-        service_data = {
+        #  Format service data (include containers for this service)
+        service_data.append({
             "id": service_id,
             "name": service_name,
             "image": service_image or "unknown",
             "replicas": service_replicas,
             "labels": service_labels,
+            "status": status,
             "created": service_created_at or "unknown",
             "updated": service_updated_at or "unknown"
-        }
+        })
 
     return render_template("dashboard.html", services=service_data, tasks=task_dict)
 

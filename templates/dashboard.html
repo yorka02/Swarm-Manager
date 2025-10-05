@@ -21,8 +21,6 @@
             <span class="service-name">{{ service.name }}</span>
             {% set service_tasks = tasks[service.name] if service.name in tasks else [] %}
             {% set active = (service_tasks | length > 0 and service_tasks[0]["Status"]["State"] == "running") %}
-            {% set preparing = (service_tasks | length > 0 and service_tasks[0]["Status"]["State"] == "preparing") %}
-            {% set preparing = (service_tasks | length > 0 and service_tasks[0]["Status"]["State"] == "starting") %}
             <span class="badge ms-2 {% if active %}bg-success{% elif preparing %}bg-warning{% else %}bg-danger{% endif %}">
             {% if active %}
               Aktiv
@@ -32,9 +30,6 @@
               Stoppet
             {% endif %}
             </span>
-            {% if service.site and service.site != '-' %}
-              <span class="badge bg-secondary ms-2">Site-{{ service.site }}</span>
-            {% endif %}
           </span>
         </button>
       </h2>
@@ -44,14 +39,20 @@
           <p><strong>Image:</strong> <code>{{ service.image }}</code></p>
           <p><strong>Site:</strong> {{ service.site }}</p>
           <p><strong>Oprettet:</strong> {{ service.created }}</p>
+          <p><strong>Opdateret:</strong> {{ service.updated }}</p>
 
-          <h6>Tasks:</h6>
+          <h6>Containers:</h6>
           <ul class="list-group mb-3">
             {% for task in service_tasks %}
             <li class="list-group-item small">
               <strong>ID:</strong> {{ task["ID"][:12] }}<br>
+              <strong>Image:</strong> {{ task["Spec"]["ContainerSpec"]["Image"] }}<br>
               <strong>State:</strong> {{ task["Status"]["State"] }}<br>
-              <strong>Opdateret:</strong> {{ task["Status"]["Timestamp"] if "Timestamp" in task["Status"] else "ukendt" }}
+              <strong>Desired State:</strong> {{ task["DesiredState"] }}<br>
+              <strong>Placement:</strong> {{ task["Spec"]["Placement"] }}<br>
+              <strong>Oprettet:</strong> {{ task["CreatedAt"] }}<br>
+              <strong>Opdateret:</strong> {{ task["UpdatedAt"] }}
+
             </li>
             {% else %}
             <li class="list-group-item text-muted">Ingen tasks fundet.</li>
