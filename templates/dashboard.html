@@ -17,21 +17,29 @@
     {% for service in services %}
     <div class="accordion-item mb-3 service-item">
       <h2 class="accordion-header" id="heading{{ loop.index }}">
-        <button class="accordion-button collapsed d-flex justify-content-between" type="button" data-bs-toggle="collapse" data-bs-target="#collapse{{ loop.index }}" aria-expanded="false" aria-controls="collapse{{ loop.index }}">
+        <div class="d-flex align-items-center">
+          <button class="accordion-button collapsed d-flex justify-content-between flex-grow-1" type="button" data-bs-toggle="collapse" data-bs-target="#collapse{{ loop.index }}" aria-expanded="false" aria-controls="collapse{{ loop.index }}">
             <span class="service-name">{{ service.name }}</span>
             {% set service_tasks = tasks[service.name] if service.name in tasks else [] %}
+            {# derive site label from service.site or labels map #}
+            {% if service.site is defined and service.site %}
+              {% set site_label = service.site %}
+            {% else %}
+              {% set site_label = (service.labels.get('node.labels.site') if service.labels else None) %}
+            {% endif %}
             {% set active = (service_tasks | length > 0 and service_tasks[0]["Status"]["State"] == "running") %}
-            <span class="badge ms-2 {% if active %}bg-success{% elif preparing %}bg-warning{% else %}bg-danger{% endif %}">
+            <span class="badge ms-2 {% if active %}bg-success{% else %}bg-danger{% endif %}">
             {% if active %}
               Aktiv
-            {% elif preparing %}
-              Forbereder
             {% else %}
               Stoppet
             {% endif %}
             </span>
-          </span>
-        </button>
+            {% if site_label %}
+              <span class="ms-2 btn btn-sm btn-secondary" style="background-color: #6c757d; border-color: #6c757d; color: #fff;" disabled>Site-{{ site_label }}</span>
+            {% endif %}
+          </button>
+        </div>
       </h2>
       <div id="collapse{{ loop.index }}" class="accordion-collapse collapse" aria-labelledby="heading{{ loop.index }}" data-bs-parent="#servicesAccordion">
         <div class="accordion-body">
