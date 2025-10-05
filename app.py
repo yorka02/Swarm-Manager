@@ -184,6 +184,7 @@ def dashboard():
     # Get all services and containers using SwarmManager instance
     services = swarm_manager.list_services()
     containers = swarm_manager.list_containers()
+    task_dict = {}
 
     for s in services:
         service_name, service_image, service_id, service_replicas, service_labels, service_created_at, service_updated_at = swarm_manager.get_service(s.id)
@@ -192,18 +193,25 @@ def dashboard():
         if service_name.startswith("traefik-site-") or service_name == "swarm-manager_web":
             continue
         
-        # Get tasks/containers for the service
-        for container in s.tasks():
-            container_id, container_name, container_status, container_health, container_image, container_created_at = swarm_manager.get_container(container.get('Status', {}).get('ContainerStatus', {}).get('ContainerID', ''))
+        tasks = s.tasks()
+        if any(t["Status"]["State"] == "running" for t in tasks):
+            status = "running"
+        else:
+            status = "stopped"
+        task_dict[s.name] = tasks
 
-            s.container_data = {
-                "id": container_id,
-                "name": container_name,
-                "status": container_status,
-                "health": container_health,
-                "image": container_image,
-                "created": container_created_at
-            }
+        # Get tasks/containers for the service
+        # for container in s.tasks():
+        #     container_id, container_name, container_status, container_health, container_image, container_created_at = swarm_manager.get_container(container.get('Status', {}).get('ContainerStatus', {}).get('ContainerID', ''))
+
+        #     s.container_data = {
+        #         "id": container_id,
+        #         "name": container_name,
+        #         "status": container_status,
+        #         "health": container_health,
+        #         "image": container_image,
+        #         "created": container_created_at
+        #     }
 
         #  Format service data
         service_data = {
@@ -216,68 +224,7 @@ def dashboard():
             "updated": service_updated_at or "unknown"
         }
 
-    # Her samler den alle tasks som er lavet per service
-    #service_data = []
-    #tasks_dict = {}  
-
-    # for s in services:
-    #     # Filter out containers with name traefik-site-* and swarm-manager_web
-    #     names = s.name
-    #     if names.startswith("traefik-site-") or names == "swarm-manager_web":
-    #         continue
-    #     try:
-    #         # her gemmer den tasks per service navn
-    #         tasks = s.tasks()
-    #         tasks_dict[s.name] = tasks 
-
-    #         if any(t["Status"]["State"] == "running" for t in tasks):
-    #             status = "running"
-
-    #         if any(t["Status"]["State"] == "stopped" for t in tasks):
-    #             status = "stopped"
-
-    #         if any(t["Status"]["State"] == "preparing" for t in tasks):
-    #             status = "preparing"
-
-    #         if any(t["Status"]["State"] == "starting" for t in tasks):
-    #             status = "starting"
-
-    #         else:
-    #             status = "unknown"
-
-    #         created = s.attrs.get("CreatedAt", "")
-    #         created_time = created.split(".")[0] if created else "ukendt"
-
-    #         # Extract image from service spec (TaskTemplate -> ContainerSpec -> Image)
-    #         image = None
-    #         try:
-    #             image = s.attrs.get("Spec", {}).get("TaskTemplate", {}).get("ContainerSpec", {}).get("Image")
-    #         except Exception:
-    #             image = None
-
-    #         # Extract site label from service spec labels or from TaskTemplate ContainerSpec labels
-    #         site_label = None
-    #         try:
-    #             spec_labels = s.attrs.get("Spec", {}).get("Labels", {}) or {}
-    #             container_labels = s.attrs.get("Spec", {}).get("TaskTemplate", {}).get("ContainerSpec", {}).get("Labels", {}) or {}
-    #             # prefer service-level label 'site' or 'node.labels.site'
-    #             site_label = spec_labels.get("site") or spec_labels.get("node.labels.site") or container_labels.get("site") or container_labels.get("node.labels.site")
-    #         except Exception:
-    #             site_label = None
-
-    #         service_data.append({
-    #             "id": s.id,
-    #             "name": s.name,
-    #             "status": status,
-    #             "created": created_time,
-    #             "replicas": s.attrs["Spec"]["Mode"].get("Replicated", {}).get("Replicas", 0),
-    #             "image": image or "unknown",
-    #             "site": site_label.upper() or "-"
-    #         })
-    #     except Exception:
-    #         pass 
-
-    return render_template("dashboard.html", services=service_data, tasks=containers)
+    return render_template("dashboard.html", services=service_data, tasks=task_dict)
 
 
 # Start service igen
@@ -285,29 +232,8 @@ def dashboard():
 @app.route("/service/start/<service_id>")
 @login_required
 def service_start(service_id):
-    client = docker.DockerClient(base_url='unix://var/run/docker.sock')
-
     try:
-        service = client.services.get(service_id)
-        spec = service.attrs["Spec"]
-
-        # Sætter antal replicas til 1 for at starte servicen
-        mode = spec.get("Mode", {})
-        if "Replicated" in mode:
-            mode["Replicated"]["Replicas"] = 1
-        else:
-            mode = {"Replicated": {"Replicas": 1}}
-
-        # Opdaterer servicen med den nye konfiguration
-        service.update(
-            taskTemplate=spec.get("TaskTemplate"),
-            name=spec.get("Name"),
-            labels=spec.get("Labels", {}),
-            mode=mode,
-            networks=spec.get("Networks", []),
-            endpoint_spec=spec.get("EndpointSpec", {})
-        )
-
+        swarm_manager.start_service(service_id)
         flash("Service startet", "success")
 
     except Exception as e:
@@ -315,61 +241,24 @@ def service_start(service_id):
 
     return redirect(url_for("dashboard"))
 
+# Stop service
 # This function does not currently work!
 @app.route("/service/stop/<service_id>")
 @login_required
 def service_stop(service_id):
     flash("Denne funktion virker desværre ikke endnu.", "warning")
     return redirect(url_for("dashboard"))
-    # client = docker.DockerClient(base_url='unix://var/run/docker.sock')
-
-    # try:
-    #     service = client.services.get(service_id)
-    #     spec = service.attrs["Spec"]
-
-    #     # Sætter antal replicas til 0 for at stoppe servicen
-    #     mode = spec.get("Mode", {})
-    #     if "Replicated" in mode:
-    #         mode["Replicated"]["Replicas"] = 0
-    #     else:
-    #         mode = {"Replicated": {"Replicas": 0}}
-
-    #     # Opdaterer servicen så den stopper
-    #     service.update(
-    #         taskTemplate=spec.get("TaskTemplate"),
-    #         name=spec.get("Name"),
-    #         labels=spec.get("Labels", {}),
-    #         mode=mode,
-    #         networks=spec.get("Networks", []),
-    #         endpoint_spec=spec.get("EndpointSpec", {})
-    #     )
-
-    #     flash("Service stoppet", "info")
-
-    # except Exception as e:
-    #     flash(f"Fejl: {e}", "danger")
-
-    # return redirect(url_for("dashboard"))
-
-
-
-
 
 # Slet service
 @app.route("/service/delete/<service_id>")
 @login_required
 def service_delete(service_id):
-    client = docker.DockerClient(base_url='unix://var/run/docker.sock')
     try:
-        service = client.services.get(service_id)
-        service.remove()
+        swarm_manager.delete_service(service_id)
         flash("Service slettet", "warning")
     except Exception as e:
         flash(f"Fejl: {e}", "danger")
     return redirect(url_for("dashboard"))
-
-
-
 
 # Deploy ny service
 @app.route("/deploy", methods=["GET", "POST"])
