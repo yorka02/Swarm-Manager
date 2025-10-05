@@ -2,6 +2,7 @@
 from flask import Flask, render_template, request, redirect, url_for, flash
 from flask_login import LoginManager, login_user, login_required, logout_user, UserMixin
 import docker
+from docker.types import ContainerSpec, Placement, TaskTemplate
 import uuid
 from datetime import datetime, timezone, timedelta
 
@@ -120,7 +121,7 @@ class SwarmManager:
         service_id = service.id
         service_image = service.attrs.get("Spec", {}).get("TaskTemplate", {}).get("ContainerSpec", {}).get("Image")
         service_replicas = service.attrs.get("Spec", {}).get("Mode", {}).get("Replicated", {}).get("Replicas", 0)
-        service_labels = service.attrs.get("Spec", {}).get("Labels", {})
+        service_labels = service.attrs.get("Spec", {}).get("TaskTemplate", {}).get("ContainerSpec", {}).get("Labels", {})
         service_created_at = format_docker_timestamp(service_attrs.get("CreatedAt", ""))
         service_updated_at = format_docker_timestamp(service_attrs.get("UpdatedAt", ""))
         return (service_name, service_image, service_id, service_replicas, service_labels, service_created_at, service_updated_at)
@@ -175,7 +176,7 @@ class SwarmManager:
             name=name, 
             mode={"Replicated": {"Replicas": replicas}},
             container_labels={"node.labels.site": site},
-            constraints=["node.role == worker"]
+            constraints=["node.role == worker", f"node.labels.site == {site}"]
         )
 # Create an instance of SwarmManager
 swarm_manager = SwarmManager()
@@ -213,6 +214,7 @@ def dashboard():
             "image": service_image or "unknown",
             "replicas": service_replicas,
             "labels": service_labels,
+            "site": service_labels.get("node.labels.site", "unknown").upper(),
             "status": status,
             "created": service_created_at or "unknown",
             "updated": service_updated_at or "unknown"
@@ -271,15 +273,7 @@ def deploy():
         deploy_results[task_id] = {"status": "running", "message": "Deployment startet..."}
 
         try:
-            client = docker.DockerClient(base_url='unix://var/run/docker.sock')
-            client.services.create(
-                image, 
-                name=name, 
-                mode={"Replicated": {"Replicas": replicas}},
-                #task_template={"Placement": {"Constraints": [f"node.labels.site == {site}"]}},
-                container_labels={"node.labels.site": site},
-                constraints=["node.role == worker"]
-            )
+            swarm_manager.deploy_service(name, image, replicas, site)
             deploy_results[task_id] = {"status": "success", "message": f"Service {name} deployed"}
         except Exception as e:
             deploy_results[task_id] = {"status": "error", "message": f"Fejl: {e}"}
